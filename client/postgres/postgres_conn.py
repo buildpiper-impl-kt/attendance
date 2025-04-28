@@ -16,13 +16,13 @@ CONFIG_FILE = os.getenv('CONFIG_FILE', 'config.yaml')
 class CorePostgresClient:
     """Class for defining the interface for Postgres Client"""
     def __init__(self):
-        self.client = psycopg2.connect(
-                    database=os.getenv('POSTGRES_DB'),
-                    host=os.getenv('POSTGRES_HOST'),
-                    user=os.getenv('POSTGRES_USER'),
-                    password=os.getenv('POSTGRES_PASSWORD'),
-                    port=os.getenv('POSTGRES_PORT')
-                )
+        with open(CONFIG_FILE, 'r', encoding="utf-8") as config_file:
+            yaml_values = yaml.load(config_file, Loader=yaml.FullLoader)
+        self.client = psycopg2.connect(database=yaml_values['postgres']['database'],
+                                       host=yaml_values['postgres']['host'],
+                                       user=yaml_values['postgres']['user'],
+                                       password=yaml_values['postgres']['password'],
+                                       port=yaml_values['postgres']['port'])
 
     def _record_to_domain_model(self, response):
         return EmployeeInfo(
@@ -35,28 +35,21 @@ class CorePostgresClient:
     def read_employee_attendance(self, id_value) -> EmployeeInfo:
         """Function to read a particular employee attendance details"""
         cursor = self.client.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute(
-        "SELECT id, name, status, date FROM records WHERE id=%s",
-        (id_value,)
-        )
-        #read_query = f"SELECT id, name, status, date FROM records WHERE id='{id_value}'"
-        #cursor.execute(read_query)
+        read_query = f"SELECT id, name, status, date FROM records WHERE id='{id_value}'"
+        cursor.execute(read_query)
         response = cursor.fetchone()
-        # return self._record_to_domain_model(OrderedDict(response))
-        return self._record_to_domain_model(OrderedDict(response)) if response else None
+        return self._record_to_domain_model(OrderedDict(response))
 
     def read_all_employee_attendance(self) -> List[EmployeeInfo]:
         """Function to read all employee attendance records"""
         cursor = self.client.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute("SELECT id, name, status, date FROM records ORDER BY id DESC")
-        records = cursor.fetchall()
-return [self._record_to_domain_model(r) for r in reversed(records)]
-        # return list(
-        #     map(
-        #         lambda _: self._record_to_domain_model(_),
-        #         cursor.fetchall(),
-        #     )
-        # )[::-1]
+        return list(
+            map(
+                lambda _: self._record_to_domain_model(_),
+                cursor.fetchall(),
+            )
+        )[::-1]
 
     # pylint: disable=invalid-name,redefined-builtin
     def create_employee_attendance(self, id, name, status, date):

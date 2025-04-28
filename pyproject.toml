@@ -1,16 +1,11 @@
 [tool.poetry]
 name = "attendance-api"
 version = "0.1.0"
-description = "A Python-based microservice for handling attendance records"
+description = "A python based microservice for handling attendance records"
 authors = ["Opstree Solutions"]
 license = "Apache"
 readme = "README.md"
-packages = [
-    {include = "client"},
-    {include = "models"},
-    {include = "router"},
-    {include = "utils"}
-]
+packages = [{include = "attendance_api"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -26,10 +21,10 @@ flasgger = "0.9.7b2"
 pytest-mock = "^3.11.1"
 pytest = "^7.4.0"
 pytest-cov = "^4.1.0"
-psycopg2-binary = "^2.9.10"
 
 [tool.poetry.group.dev.dependencies]
 Flask = "^2.3.2"
+psycopg2 = "^2.9.6"
 PyYAML = "^6.0"
 
 [build-system]

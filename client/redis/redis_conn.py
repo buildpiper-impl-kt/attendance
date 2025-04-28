@@ -6,20 +6,17 @@ import os
 import redis
 import yaml
 
-# Fallback for config file if needed (Kubernetes can override with env vars)
 CONFIG_FILE = os.getenv('CONFIG_FILE', 'config.yaml')
 
 def get_caching_data():
     """Function to get cache config for redis cache"""
-    host = os.getenv('REDIS_HOST', 'localhost')  # Default Redis host
-    port = os.getenv('REDIS_PORT', 6379)         # Default Redis port
-    password = os.getenv('REDIS_PASSWORD', '')   # Default password is empty string
-
-    config_dict = {
+    with open(CONFIG_FILE, 'r', encoding="utf-8") as config_file:
+        yaml_value = yaml.load(config_file, Loader=yaml.FullLoader)
+    config_dict={
         "CACHE_TYPE": "redis",
-        "CACHE_REDIS_HOST": host,
-        "CACHE_REDIS_PORT": int(port),
-        "CACHE_REDIS_URL": f"redis://{host}:{port}/0"
+        "CACHE_REDIS_HOST": yaml_value['redis']['host'],
+        "CACHE_REDIS_PORT": yaml_value['redis']['port'],
+        "CACHE_REDIS_URL": f"redis://{yaml_value['redis']['host']}:{yaml_value['redis']['port']}/0"
     }
     return config_dict
 
@@ -27,17 +24,12 @@ def get_caching_data():
 class CoreRedisClient:
     """Class for defining the structure of Redis database"""
     def __init__(self):
-        # Get environment variables or fallback to the config.yaml
-        host = os.getenv('REDIS_HOST', 'localhost')  
-        port = os.getenv('REDIS_PORT', 6379)         
-        password = os.getenv('REDIS_PASSWORD', '')   
-
-        self.client = redis.Redis(
-            host=host,
-            port=int(port),
-            password=password,
-            decode_responses=True
-        )
+        with open(CONFIG_FILE, 'r', encoding="utf-8") as config_file:
+            yaml_values = yaml.load(config_file, Loader=yaml.FullLoader)
+        self.client = redis.Redis(host=yaml_values['redis']['host'],
+                                   port=yaml_values['redis']['port'],
+                                   password=yaml_values['redis']['password'],
+                                   decode_responses=True)
 
     def redis_status(self):
         """Function for getting the health of redis"""
